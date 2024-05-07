@@ -1,0 +1,99 @@
+%sampling theorem
+
+
+
+%study of sampling theorem and aliasing effect
+clc; clear all; close all;
+t=-10:0.55:10; %declare the time period
+x=cos(2*pi*10*t); %declare the first signal
+%plot the first signal
+subplot(2,2,1);
+plot(t,x);
+title('First Input signal, x=cos(2*pi*10*t)');
+n=-10:0.55:10; %declare the sampled signal
+x1=cos(2*pi*10/40*n);
+%plot the sampled version of first signal
+subplot(2,2,3);
+stem(n,x1);
+hold on;
+subplot(2,2,3);
+plot(n,x1);
+title('Properly Sampled Signal, x1=cos(2*pi*10/40*n)')
+y=cos(2*pi*50*t); %declare the second signal
+y1=cos(2*pi*50/40*n); %declare the sampled signal
+%plot the second signal
+subplot(2,2,2);
+plot(t,y);
+title('Second Input signal, y=cos(2*pi*50*t)')
+%plot the sampled version of second signal
+subplot(2,2,4);
+stem(n,y1);
+hold on;
+subplot(2,2,4);
+plot(n,y1);
+title('Sampled Signal showing Aliasing Effect, y1=cos(2*pi*50/40*n)');
+
+SNR
+
+
+
+
+choice=input('Enter 1:PSK, 2:FSK - ');
+Si = input('Enter input signal energy - ');
+eta = 2*input('Enter PSD of input white noise - ');
+fm = input('Enter baseband cut-off frequency - ');
+N = input('Enter number of bits used for each sample - ');
+if choice == 1,
+outputSNR_PSK = 10*log10(2^(2*N)/(1+2^(2*N+1)*erfc(sqrt(Si/(2*N*eta*fm)))))
+end
+if choice == 2,
+outputSNR_FSK = 10*log10(2^(2*N)/(1+2^(2*N+1)*erfc(sqrt(0.3*Si/(N*eta*fm)))))
+end
+%DM system
+Si = input('Enter input signal energy - ');
+eta = 2*input('Enter PSD of input white noise - ');
+fm = input('Enter baseband upper cut-off frequency - ');
+f1 = input('Enter baseband lower cut-off frequency - ');
+fb = input('Enter bit rate - ');
+
+
+
+ISI
+%pnrz.m
+function pout=prect(T);
+pout=ones(1,T);
+end
+%prz.m
+function pout=prect(T);
+pout=[zeros(1,T/4) ones(1,T/2) zeros(1,T/4)];
+end
+%psine.m
+function pout=psine(T);
+pout=sin(pi*[0:T-1]/T);
+end
+%prcos.m
+function y=prcos(rollfac,length,T)
+y=rcosfir(rollfac,length,T,1,'normal');
+end
+%binary_eye.m
+clear;clf;
+data=sign(randn(1,400));%generate 400 random bits
+Tau=64;
+dataup=upsample(data, Tau);%generate impulse train
+yrz=conv(dataup,prz(Tau));
+yrz=yrz(1:end-Tau+1);
+ynrz=conv(dataup,pnrz(Tau));
+ynrz=ynrz(1:end-Tau+1);
+ysine=conv(dataup,psine(Tau));
+ysine=ysine(1:end-Tau+1);
+Td=4;
+yrcos=conv(dataup,prcos(0.5,Td,Tau));
+yrcos=yrcos(2*Td*Tau:end-2*Td*Tau+1);
+eye1=eyediagram(yrz,2*Tau,Tau,Tau/2);
+title('RZ Eye-Diagram');
+eye2=eyediagram(ynrz,2*Tau,Tau,Tau/2);
+title('NRZ Eye-Diagram');
+eye3=eyediagram(ysine,2*Tau,Tau,Tau/2);
+title('HALF SINE Eye-Diagram');
+eye4=eyediagram(yrcos,2*Tau,Tau);
+title('Raised COSINE Eye-Diagram');
